@@ -1741,3 +1741,15 @@ global:
 	nm_setting_option_set_boolean;
 	nm_setting_option_set_uint32;
 } libnm_1_24_0;
+
+libnm_1_28_0 {
+global:
+	nm_keyfile_handler_data_fail_with_error;
+	nm_keyfile_handler_data_get_context;
+	nm_keyfile_handler_data_warn_get;
+	nm_keyfile_handler_flags_get_type;
+	nm_keyfile_handler_type_get_type;
+	nm_keyfile_read;
+	nm_keyfile_warn_severity_get_type;
+	nm_keyfile_write;
+} libnm_1_26_0;
