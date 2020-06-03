@@ -36,9 +36,7 @@ extern "C" {
 #include <limits.h>
 #include <stdalign.h>
 #include <stdarg.h>
-#if 0 /* NM_IGNORED */
 #include <stdatomic.h>
-#endif /* NM_IGNORED */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
