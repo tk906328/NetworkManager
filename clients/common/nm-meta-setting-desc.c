@@ -2151,6 +2151,19 @@ _multilist_validate_fcn_is_domain (const char *domain, GError **error)
 	return domain;
 }
 
+static const char *
+_multilist_validate_fcn_is_ipv4_addr_or_subnet (const char *value, GError **error)
+{
+	if (!nm_utils_parse_inaddr_prefix_bin (AF_INET, value, NULL, NULL, NULL)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                    _("invalid IPv4 or subnet \"%s\""),
+		                    value);
+		return NULL;
+	}
+
+	return value;
+}
+
 static gboolean
 _set_fcn_gobject_bytes (ARGS_SET_FCN)
 {
@@ -5834,6 +5847,20 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	        ),
 	    ),
 	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_REJECT_SERVERS,
+	    .property_type =                &_pt_multilist,
+	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+	        PROPERTY_TYP_DATA_SUBTYPE (multilist,
+	            .get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, nm_setting_ip_config_get_num_dhcp_reject_servers),
+	            .add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingIPConfig, nm_setting_ip_config_add_dhcp_reject_server),
+	            .remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_dhcp_reject_server),
+	            .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dhcp_reject_server_by_value),
+	            .validate_fcn =         _multilist_validate_fcn_is_ipv4_addr_or_subnet,
+	            .strsplit_plain =       TRUE,
+	        ),
+	    ),
+	),
+
 	NULL
 };
 
