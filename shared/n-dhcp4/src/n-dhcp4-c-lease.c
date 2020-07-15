@@ -242,6 +242,33 @@ _c_public_ void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint
 }
 
 /**
+ * n_dhcp4_client_lease_get_server_identifier() - get the server identifier
+ * @lease:                      the lease to operate on
+ * @addr:                       return argument for the server identifier
+ *
+ * Gets the address contained in the server-identifier DHCP option, in network
+ * byte order.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+_c_public_ int n_dhcp4_client_lease_get_server_identifier (NDhcp4ClientLease *lease, struct in_addr *addr) {
+        uint8_t *data;
+        size_t n_data;
+        uint32_t be32;
+        int r;
+
+        r = n_dhcp4_incoming_query(lease->message, N_DHCP4_OPTION_SERVER_IDENTIFIER, &data, &n_data);
+        if (r)
+                return r;
+        else if (n_data < sizeof(be32))
+                return N_DHCP4_E_MALFORMED;
+
+        memcpy(&be32, data, sizeof(be32));
+        addr->s_addr = be32;
+        return 0;
+}
+
+/**
  * n_dhcp4_client_lease_query() - query the lease for an option
  * @lease:                      the lease to operate on
  * @option:                     the DHCP4 option code
