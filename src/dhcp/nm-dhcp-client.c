@@ -51,6 +51,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_HOSTNAME,
 	PROP_HOSTNAME_FLAGS,
 	PROP_MUD_URL,
+	PROP_REJECT_SERVERS,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -61,6 +62,7 @@ typedef struct _NMDhcpClientPrivate {
 	char *       uuid;
 	GBytes *     client_id;
 	char *       hostname;
+	char **      reject_servers;
 	char *       mud_url;
 	pid_t        pid;
 	guint        timeout_id;
@@ -320,6 +322,14 @@ nm_dhcp_client_get_mud_url (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->mud_url;
+}
+
+const char *const *
+nm_dhcp_client_get_reject_servers (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return (const char *const *) NM_DHCP_CLIENT_GET_PRIVATE (self)->reject_servers;
 }
 
 /*****************************************************************************/
@@ -944,6 +954,37 @@ nm_dhcp_client_handle_event (gpointer unused,
 	return TRUE;
 }
 
+gboolean
+nm_dhcp_client_server_id_is_rejected (NMDhcpClient *self, gconstpointer addr)
+{
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	in_addr_t addr4 = *(in_addr_t *) addr;
+	guint i;
+
+	/* IPv6 not implemented yet */
+	nm_assert (priv->addr_family == AF_INET);
+
+	if (!priv->reject_servers || !priv->reject_servers[0])
+		return FALSE;
+
+	for (i = 0; priv->reject_servers[i]; i++) {
+		in_addr_t r_addr;
+		guint32 mask;
+		int r_prefix;
+
+		nm_assert (nm_utils_parse_inaddr_prefix_bin (AF_INET,
+		                                             priv->reject_servers[i],
+		                                             NULL,
+		                                             &r_addr,
+		                                             &r_prefix));
+		mask = _nm_utils_ip4_prefix_to_netmask (r_prefix);
+		if ((addr4 & mask) == (r_addr & mask))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -1076,6 +1117,10 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->timeout = g_value_get_uint (value);
 		break;
+	case PROP_REJECT_SERVERS:
+		/* construct-only */
+		priv->reject_servers = g_value_dup_boxed (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1120,6 +1165,9 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->client_id, g_bytes_unref);
 	nm_clear_pointer (&priv->hwaddr, g_bytes_unref);
 	nm_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
+
+	if (priv->reject_servers)
+		g_strfreev (priv->reject_servers);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 
@@ -1236,6 +1284,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_REJECT_SERVERS] =
+	    g_param_spec_boxed (NM_DHCP_CLIENT_REJECT_SERVERS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

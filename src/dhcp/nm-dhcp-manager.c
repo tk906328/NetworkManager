@@ -225,6 +225,7 @@ client_start (NMDhcpManager *self,
               NMSettingIP6ConfigPrivacy privacy,
               const char *last_ip4_address,
               guint needed_prefixes,
+              const char *const *reject_servers,
               GError **error)
 {
 	NMDhcpManagerPrivate *priv;
@@ -309,6 +310,7 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
 	                       NM_DHCP_CLIENT_HOSTNAME_FLAGS, (guint) hostname_flags,
+	                       NM_DHCP_CLIENT_REJECT_SERVERS, reject_servers,
 	                       NM_DHCP_CLIENT_FLAGS, (guint) (0
 	                           | (hostname_use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN  : 0)
 	                           | (info_only         ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : 0)
@@ -389,6 +391,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            const char *last_ip_address,
+                           const char *const *reject_servers,
                            GError **error)
 {
 	NMDhcpManagerPrivate *priv;
@@ -448,6 +451,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 	                     0,
 	                     last_ip_address,
 	                     0,
+	                     reject_servers,
 	                     error);
 }
 
@@ -513,6 +517,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	                     privacy,
 	                     NULL,
 	                     needed_prefixes,
+	                     NULL,
 	                     error);
 }
 
